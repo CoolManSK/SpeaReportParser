@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConfigFile.cs" />
+    <Compile Include="DoubleResultCheck.cs" />
     <Compile Include="ErrorHandling.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

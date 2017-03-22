@@ -22,7 +22,7 @@ namespace SpeaReportParser
                 return "";
             }
 
-            XmlNode configSearchDirectoryNode = SC.SelectSingleNode("../Configuration/SearchDirectory");
+            XmlNode configSearchDirectoryNode = SC.SelectSingleNode("./Configuration/SearchDirectory");
             if (configSearchDirectoryNode == null)
             {
                 ErrorHandling.Create("Configuration/SearchDirectory node missing in Station config file. Please, call test engineer", true, true);
@@ -44,7 +44,7 @@ namespace SpeaReportParser
                 return -1;
             }
 
-            XmlNode configSearchIntervalNode = SC.SelectSingleNode("../Configuration/SearchInterval");
+            XmlNode configSearchIntervalNode = SC.SelectSingleNode("./Configuration/SearchInterval");
             if (configSearchIntervalNode == null)
             {
                 ErrorHandling.Create("Configuration/SearchInterval node missing in Station config file. Please, call test engineer.", true, true);
