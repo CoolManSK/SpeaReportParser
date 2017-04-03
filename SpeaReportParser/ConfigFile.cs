@@ -62,5 +62,32 @@ namespace SpeaReportParser
             }
             return retVal;
         } 
+
+        public static String GetOperatorPersonalNumber(String OperatorName)
+        {
+            String retVal = "-1";
+
+            XmlDocument OC = new XmlDocument();
+            if (File.Exists(@"Configurations/Operators.xml"))
+            {
+                OC.Load(@"Configurations/Operators.xml");
+            }
+            else
+            {
+                ErrorHandling.Create("Operators config file not found. Please, call test engineer.", true, true);
+                return "-2";
+            }
+
+            XmlNode actualOperatorNode = OC.SelectSingleNode(String.Concat("./Operators/", OperatorName));
+            if (actualOperatorNode == null)
+            {
+                ErrorHandling.Create(String.Concat("Operator \"", OperatorName, "\" not found in database of operators."), false, true);
+            }
+            else
+            {
+                retVal = actualOperatorNode.SelectSingleNode("./OSNumber").InnerText;
+            }
+            return retVal;
+        }
     }
 }

@@ -113,6 +113,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Configurations\Operators.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Configurations\Station.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

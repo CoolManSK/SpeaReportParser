@@ -15,6 +15,7 @@ namespace SpeaReportParser
     public partial class MainForm : Form
     {
         private DirectoryInfo SearchDirectory;
+        private BelMES BelMesObj;
 
         public MainForm()
         {
@@ -76,19 +77,28 @@ namespace SpeaReportParser
         private void Form1_Load(object sender, EventArgs e)
         {
             this.SearchDirectory = new DirectoryInfo(ConfigFile.GetInitialSearchDirectory());
+            this.BelMesObj = new BelMES();
+
+            if (!this.BelMesObj.Activated)
+            {
+                ErrorHandling.Create("Unable to make connection with BelMes server. Application will close now. Please call Test Engineer", true, true);
+            }
 
             Int32 n_timeIntervalMainTimer = ConfigFile.GetSearchInterval();
-            if (n_timeIntervalMainTimer > -1)
+            if (n_timeIntervalMainTimer > 0)
             {
+                
                 this.timer_Main.Interval = n_timeIntervalMainTimer * 1000;
                 this.timer_Main_Tick(new object(), new EventArgs());
                 this.timer_Main.Start();
             }
             else
             {
-                ErrorHandling.Create("Program could not be started. It will close now.", true, false);
+                ErrorHandling.Create("Program could not be started. It will close now. Please call Test Engineer.", true, true);
                 Application.Exit();
-            }    
+            }
+
+            
         }
 
         private void timer_Main_Tick(object sender, EventArgs e)
@@ -216,6 +226,29 @@ namespace SpeaReportParser
                         SpeaReportsToProcess.SetValue(SpeaFileReports[i], SpeaReportsToProcess.Length - 1);
                         continue;
                     }                                        
+                }
+
+                foreach (SpeaReport actSRTP in SpeaReportsToProcess)
+                {
+                    UnitReport UR = new UnitReport();
+
+                    UR.starttime = Convert.ToDateTime(actSRTP.ReportHeader.StartTime);
+                    UR.endtime = Convert.ToDateTime(actSRTP.ReportHeader.EndTime);
+                    
+                    UR.Operator = new _Operator(ConfigFile.GetOperatorPersonalNumber(actSRTP.ReportHeader.OperatorID));
+
+                    UR.Cathegory.Product.SerialNo = actSRTP.ReportHeader.SerialNumber;
+
+                    UR.AddProperty("Work Order", UR.Cathegory.Product.SerialNo.Substring(0, 8));
+
+                    UR.TestRun.name = "INCIRCUIT TEST";
+
+                    foreach (TestRunSpea actTRS in actSRTP.ReportBody.TestRuns)
+                    {
+                        UR.TestRun.AddTestRunChild(actTRS.TestName, Convert.ToDateTime(actSRTP.ReportHeader.StartTime), Convert.ToDateTime(actSRTP.ReportHeader.EndTime), actTRS.TestGrade, actTRS.MeasUnit, actTRS.MeasValue, actTRS.LowLimit, actTRS.HighLimit);
+                    }
+
+
                 }
 
                 /*

@@ -15,9 +15,8 @@ namespace SpeaReportParser
         public Boolean Activated = false;
         public String Mode = "D";
 
-        public BelMES(String StationName)
+        public BelMES()
         {
-            if (StationName == "") return;
             try
             {
                 //String userName = "trska";
@@ -26,7 +25,7 @@ namespace SpeaReportParser
                 if (this.Env != null)
                 {
                     if ((this.Env.strComputer == "") || (this.Env.strComputer == null))
-                        this.LogFileName = String.Concat(StationName, "_", String.Format("{0:yyyMMdd}", DateTime.Now), ".txt");
+                        this.LogFileName = String.Concat(Environment.MachineName, "_", String.Format("{0:yyyMMdd}", DateTime.Now), ".txt");
                     else
                         this.LogFileName = String.Concat(this.Env.strComputer, "_", String.Format("{0:yyyyMMdd}", DateTime.Now), ".txt");
                     if (this.Env.blnAuthorizationPaused != false) this.Env.blnAuthorizationPaused = false;
@@ -36,7 +35,7 @@ namespace SpeaReportParser
                 }
                 else
                 {
-                    this.LogFileName = String.Concat(StationName, "_", String.Format("{0:yyyyMMdd}", DateTime.Now), ".txt");
+                    this.LogFileName = String.Concat(Environment.MachineName, "_", String.Format("{0:yyyyMMdd}", DateTime.Now), ".txt");
                 }
 
                 if (!File.Exists(String.Concat(this.LogFilePath, this.LogFileName)))
