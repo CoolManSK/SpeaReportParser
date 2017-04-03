@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Globalization;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace SpeaReportParser
 {
@@ -13,6 +14,76 @@ namespace SpeaReportParser
         public String MeasUnit;
     }
 
+    struct SpeaReportHeader
+    {
+        public String ProductID;
+        public String SerialNumber;
+        public String OperatorID;
+        public String StartTime;
+        public String EndTime;
+        public String Grade;
+    }
+
+        
+
+    class SpeaReport : IDisposable
+    {
+        // Flag: Has Dispose already been called?
+        bool disposed = false;
+        // Instantiate a SafeHandle instance.
+        SafeHandle handle = new SafeFileHandle(IntPtr.Zero, true);
+
+        // Public implementation of Dispose pattern callable by consumers.
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        // Protected implementation of Dispose pattern.
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            if (disposing)
+            {
+                handle.Dispose();
+                // Free any other managed objects here.
+                //
+            }
+
+            // Free any unmanaged objects here.
+            //
+            disposed = true;
+        }
+        public class SpeaReportBody
+        {
+            public TestRunSpea[] TestRuns = { };
+        }
+
+        public SpeaReportHeader ReportHeader;
+        public SpeaReportBody ReportBody;
+        public SpeaReport()
+        {
+            this.ReportHeader = new SpeaReportHeader();
+            this.ReportHeader.Grade = "";
+            this.ReportHeader.EndTime = "";
+            this.ReportHeader.OperatorID = "";
+            this.ReportHeader.ProductID = "";
+            this.ReportHeader.SerialNumber = "";
+            this.ReportHeader.StartTime = "";
+
+            this.ReportBody = new SpeaReportBody();            
+        }        
+
+        public void AddTestRun(String[] LineElements)
+        {
+            Array.Resize(ref this.ReportBody.TestRuns, this.ReportBody.TestRuns.Length + 1);
+            this.ReportBody.TestRuns.SetValue(ParserFunctions.FormatLine(LineElements), this.ReportBody.TestRuns.Length - 1);
+        }
+    }
+
     class ParserFunctions
     {
         public static TestRunSpea FormatLine(String[] LineElements)
@@ -20,7 +91,14 @@ namespace SpeaReportParser
             TestRunSpea retVal = new TestRunSpea();
 
             retVal.TestName = LineElements[5];
-            retVal.TestGrade = LineElements[7];
+            if (LineElements[7].Substring(0, 4) == "FAIL")
+            {
+                retVal.TestGrade = LineElements[7].Substring(0, 4);
+            }
+            else
+            {
+                retVal.TestGrade = LineElements[7];
+            }            
             retVal.LowLimit = ConvertToDouble(LineElements[9]);
             retVal.HighLimit = ConvertToDouble(LineElements[10]);
             retVal.MeasValue = ConvertToDouble(LineElements[8]);

@@ -15,7 +15,9 @@ namespace SpeaReportParser
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            MainForm myForm = new MainForm();
+            myForm.CheckForUpdateAndInstallIt();
+            Application.Run();
         }
     }
 }

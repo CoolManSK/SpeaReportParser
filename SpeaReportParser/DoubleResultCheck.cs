@@ -5,13 +5,14 @@ namespace SpeaReportParser
 {
     class DoubleResultCheck
     {
+        const String ResultLogFile = "ResultLog.txt";
+
         public static void WriteResult(String SerialNumber, DateTime StartTime)
         {
             if (IsWritten(SerialNumber, StartTime))
                 return;
 
-            FileInfo myConfFile = new FileInfo("ResultLog.txt");
-            StreamWriter mySW = new StreamWriter(myConfFile.Name, true);
+            StreamWriter mySW = new StreamWriter(ResultLogFile, true);
             mySW.WriteLine(String.Concat(SerialNumber, ";", StartTime.ToString()));
             mySW.Close();
             mySW.Dispose();
@@ -19,12 +20,15 @@ namespace SpeaReportParser
 
         public static Boolean IsWritten(String SerialNumber, DateTime StartTime)
         {
-            if (!File.Exists("ResultLog.txt"))
+            StreamReader mySR;
+            if (!File.Exists(ResultLogFile))
             {
-                File.Create("ResultLog.txt");
+                mySR = new StreamReader(File.Create(ResultLogFile));
             }
-            FileInfo myConfFile = new FileInfo("ResultLog.txt");
-            StreamReader mySR = new StreamReader(myConfFile.OpenRead());
+            else
+            {
+                mySR = new StreamReader(File.OpenRead(ResultLogFile));
+            }
 
             while (!mySR.EndOfStream)
             {
@@ -39,6 +43,15 @@ namespace SpeaReportParser
             mySR.Close();
             mySR.Dispose();            
             return false;
+        }
+
+        public static void ResetResultLog()
+        {
+            if (File.Exists(ResultLogFile))
+            {
+                File.Delete(ResultLogFile);                
+            }
+            File.Create(ResultLogFile);
         }
     }
 }
