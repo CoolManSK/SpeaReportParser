@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Configuration>
-  <SearchDirectory>D:/temp/</SearchDirectory>
+  <SearchDirectory>D:/temp/1/</SearchDirectory>
   <SearchInterval>60</SearchInterval>   <!-- in seconds -->
 </Configuration>

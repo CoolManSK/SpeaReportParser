@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using System.IO;
 using SigmaSure;
@@ -136,6 +131,8 @@ namespace SpeaReportParser
                        Convert.ToInt32(ar_LineElements[7].Substring(0, 2)),
                        Convert.ToInt32(ar_LineElements[7].Substring(3, 2)),
                        Convert.ToInt32(ar_LineElements[7].Substring(6, 2)));
+                    if (startTime < new DateTime(2017, 4, 6, 4, 0, 0)) continue; // only new reports are allowed to process
+
                     actSpeaReport.ReportHeader.StartTime = startTime.ToString();
 
                     ar_LineElements = sr.ReadLine().Split(';');
@@ -238,101 +235,42 @@ namespace SpeaReportParser
                     UR.Operator = new _Operator(ConfigFile.GetOperatorPersonalNumber(actSRTP.ReportHeader.OperatorID));
 
                     UR.Cathegory.Product.SerialNo = actSRTP.ReportHeader.SerialNumber;
+                    UR.Cathegory.Product.PartNo = actSRTP.ReportHeader.ProductID;
 
                     UR.AddProperty("Work Order", UR.Cathegory.Product.SerialNo.Substring(0, 8));
 
-                    UR.TestRun.name = "INCIRCUIT TEST";
+                    UR.TestRun.name = "ICT";
 
                     foreach (TestRunSpea actTRS in actSRTP.ReportBody.TestRuns)
                     {
                         UR.TestRun.AddTestRunChild(actTRS.TestName, Convert.ToDateTime(actSRTP.ReportHeader.StartTime), Convert.ToDateTime(actSRTP.ReportHeader.EndTime), actTRS.TestGrade, actTRS.MeasUnit, actTRS.MeasValue, actTRS.LowLimit, actTRS.HighLimit);
                     }
 
+                    UR.Cathegory.name = "Default";
 
+                    UR.mode = "P";
+
+                    UR.TestNumberPrefix = false;
+
+                    /*
+                    Array actReport = UR.GetXMLReport();
+                    String str_actReport = "";
+                    foreach (String actLine in actReport)
+                    {
+                        str_actReport = String.Concat(str_actReport, actLine);
+                    }
+                    
+                    if (this.BelMesObj.BelMESAuthorization(UR.Cathegory.Product.SerialNo, "ICT", UR.Cathegory.Product.PartNo, ""))
+                    {
+                        Thread.Sleep(500);
+
+                        if (this.BelMesObj.SetActualResult(UR.Cathegory.Product.SerialNo, "ICT", UR.TestRun.grade, str_actReport))
+                        {
+                            DoubleResultCheck.WriteResult(UR.Cathegory.Product.SerialNo, UR.starttime);
+                        }
+                    }
+                    */
                 }
-
-                /*
-                while (!sr.EndOfStream)
-                {
-                    actualLine = sr.ReadLine();
-                    if (actualLine.Substring(0, 5) != "START") continue;
-                    
-                    UnitReport UR = new UnitReport();
-
-                    String[] ar_LineElements = actualLine.Split(';');
-
-                    DateTime startTime = new DateTime(
-                        Convert.ToInt32(ar_LineElements[6].Substring(6, 4)), 
-                        Convert.ToInt32(ar_LineElements[6].Substring(0, 2)), 
-                        Convert.ToInt32(ar_LineElements[6].Substring(3, 2)), 
-                        Convert.ToInt32(ar_LineElements[7].Substring(0, 2)),
-                        Convert.ToInt32(ar_LineElements[7].Substring(3, 2)),
-                        Convert.ToInt32(ar_LineElements[7].Substring(6, 2)));
-
-                    UR.starttime = startTime;
-
-                    UR.Operator = new _Operator(ar_LineElements[5]);
-
-                    ar_LineElements = sr.ReadLine().Split(';');
-                    
-                    while (ar_LineElements[1].Length < 13)
-                    {
-                        ar_LineElements[1] = String.Concat("0", ar_LineElements[1]);
-                    }
-                    UR.Cathegory.Product.SerialNo = ar_LineElements[1];
-
-                    if (DoubleResultCheck.IsWritten(UR.Cathegory.Product.SerialNo, startTime))
-                    {
-                        continue;
-                    }
-                    
-                    UR.AddProperty("Work Order", UR.Cathegory.Product.SerialNo.Substring(0,8));
-                    UR.TestRun.name = "INCIRCUIT TEST";
-                    UR.TestRun.starttime = startTime;
-
-                    ar_LineElements = sr.ReadLine().Split(';');
-                    while (!(ar_LineElements[0] == "BOARDRESULT"))
-                    {
-                        TestRunSpea actTRS = ParserFunctions.FormatLine(ar_LineElements);
-
-                        UR.TestRun.AddTestRunChild(actTRS.TestName, startTime, startTime, actTRS.TestGrade, actTRS.MeasUnit, actTRS.MeasValue, actTRS.LowLimit, actTRS.HighLimit);
-
-                        ar_LineElements = sr.ReadLine().Split(';');
-                    }
-
-                    if (ar_LineElements[1] == "INTERRUPTED")
-                    {
-                        UR.TestRun.grade = "TERMINATE";
-                    }
-                    else
-                    {
-                        UR.TestRun.grade = ar_LineElements[1];
-                    }
-
-
-                    ar_LineElements = sr.ReadLine().Split(';');
-
-                    DateTime endTime = new DateTime(
-                        Convert.ToInt32(ar_LineElements[2].Substring(6, 4)),
-                        Convert.ToInt32(ar_LineElements[2].Substring(0, 2)),
-                        Convert.ToInt32(ar_LineElements[2].Substring(3, 2)),
-                        Convert.ToInt32(ar_LineElements[3].Substring(0, 2)),
-                        Convert.ToInt32(ar_LineElements[3].Substring(3, 2)),
-                        Convert.ToInt32(ar_LineElements[3].Substring(6, 2)));
-
-                    foreach (_TestRunStep actTRS in UR.TestRun.Testruns)
-                    {
-                        actTRS.endtime = endTime;
-                    }
-
-                    UR.endtime = endTime;
-                    UR.TestRun.endtime = endTime;                    
-
-                    Array myReport = UR.GetXMLReport(@"D:/temp/", true);
-
-                    DoubleResultCheck.WriteResult(UR.Cathegory.Product.SerialNo, UR.starttime);
-                }
-                */
             }
         }
 
@@ -358,6 +296,20 @@ namespace SpeaReportParser
             }
             this.afterUpdate = false;
             base.OnFormClosing(e);
+        }
+
+        private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OptionsForm myOF = new OptionsForm();
+            myOF.ShowDialog();
+        }
+
+        private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+
+            }
         }
     }
 }
