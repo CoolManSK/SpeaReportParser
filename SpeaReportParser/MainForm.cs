@@ -21,8 +21,10 @@ namespace SpeaReportParser
 
         private Boolean afterUpdate = false;
 
-        public void CheckForUpdateAndInstallIt()
+        public int CheckForUpdateAndInstallIt()
         {
+            int retVal = -1;
+
             UpdateCheckInfo info = null;
 
             if (ApplicationDeployment.IsNetworkDeployed)
@@ -36,17 +38,17 @@ namespace SpeaReportParser
                 catch (DeploymentDownloadException dde)
                 {
                     MessageBox.Show("The new version of the application cannot be downloaded at this time. \n\nPlease check your network connection, or try again later. Error: " + dde.Message);
-                    return;
+                    return -101;
                 }
                 catch (InvalidDeploymentException ide)
                 {
                     MessageBox.Show("Cannot check for a new version of the application. The ClickOnce deployment is corrupt. Please redeploy the application and try again. Error: " + ide.Message);
-                    return;
+                    return -102;
                 }
                 catch (InvalidOperationException ioe)
                 {
                     MessageBox.Show("This application cannot be updated. It is likely not a ClickOnce application. Error: " + ioe.Message);
-                    return;
+                    return -103;
                 }
 
                 if (info.UpdateAvailable)
@@ -56,21 +58,32 @@ namespace SpeaReportParser
                         ad.Update();
                         //MessageBox.Show("The application has been upgraded, and will now restart.");                        
                         this.afterUpdate = true;
-                        Application.Restart();
-                        Application.ExitThread();
+                        return 0;
                     }
                     catch (DeploymentDownloadException dde)
                     {
                         MessageBox.Show("Nemoze sa nainstalovat najnovsia verzia programu. \n\nProsim zavolajte testovacieho inziniera.\n\n" + dde);
-                        return;
+                        return -200;
                     }
 
                 }
+                else
+                {
+                    return retVal;
+                }
+               
             }
+            return retVal;
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            String SearchDirectory = ConfigFile.GetInitialSearchDirectory();
+            if (!Directory.Exists(SearchDirectory))
+            {
+                ErrorHandling.Create("Search Directory not found. Please call Test Engineer.", true, true);
+                return;                
+            }
             this.SearchDirectory = new DirectoryInfo(ConfigFile.GetInitialSearchDirectory());
             this.BelMesObj = new BelMES();
 
@@ -98,6 +111,9 @@ namespace SpeaReportParser
 
         private void timer_Main_Tick(object sender, EventArgs e)
         {
+            String str_actualTrayIconText = this.TrayIcon.Text;
+            this.TrayIcon.Text = "Working. Be patient.";
+
             foreach (FileInfo actFI in this.SearchDirectory.GetFiles())
             {
                 if (actFI.Extension.ToLower() != ".txt") continue;
@@ -124,13 +140,28 @@ namespace SpeaReportParser
 
                     actSpeaReport.ReportHeader.ProductID = ar_LineElements[1];
                     actSpeaReport.ReportHeader.OperatorID = ar_LineElements[5];
-                    DateTime startTime = new DateTime(
-                       Convert.ToInt32(ar_LineElements[6].Substring(6, 4)),
-                       Convert.ToInt32(ar_LineElements[6].Substring(0, 2)),
-                       Convert.ToInt32(ar_LineElements[6].Substring(3, 2)),
-                       Convert.ToInt32(ar_LineElements[7].Substring(0, 2)),
-                       Convert.ToInt32(ar_LineElements[7].Substring(3, 2)),
-                       Convert.ToInt32(ar_LineElements[7].Substring(6, 2)));
+                    DateTime startTime;
+
+                    try
+                    {
+                        startTime = new DateTime(
+                           Convert.ToInt32(ar_LineElements[6].Substring(6, 4)),
+                           Convert.ToInt32(ar_LineElements[6].Substring(0, 2)),
+                           Convert.ToInt32(ar_LineElements[6].Substring(3, 2)),
+                           Convert.ToInt32(ar_LineElements[7].Substring(0, 2)),
+                           Convert.ToInt32(ar_LineElements[7].Substring(3, 2)),
+                           Convert.ToInt32(ar_LineElements[7].Substring(6, 2)));
+                    }
+                    catch
+                    {
+                        startTime = new DateTime(
+                           Convert.ToInt32(ar_LineElements[6].Substring(6, 4)),
+                           Convert.ToInt32(ar_LineElements[6].Substring(3, 2)),
+                           Convert.ToInt32(ar_LineElements[6].Substring(0, 2)),
+                           Convert.ToInt32(ar_LineElements[7].Substring(0, 2)),
+                           Convert.ToInt32(ar_LineElements[7].Substring(3, 2)),
+                           Convert.ToInt32(ar_LineElements[7].Substring(6, 2)));
+                    }
                     if (startTime < new DateTime(2017, 4, 6, 4, 0, 0)) continue; // only new reports are allowed to process
 
                     actSpeaReport.ReportHeader.StartTime = startTime.ToString();
@@ -147,8 +178,7 @@ namespace SpeaReportParser
                         actSpeaReport.ReportHeader.SerialNumber = "0000000000000";
                     }
 
-                    while (actSpeaReport.ReportHeader.SerialNumber.Length < 13)
-                        actSpeaReport.ReportHeader.SerialNumber = String.Concat("0", actSpeaReport.ReportHeader.SerialNumber);
+                    if (actSpeaReport.ReportHeader.SerialNumber.Length != 13) continue;                    
 
                     if (DoubleResultCheck.IsWritten(actSpeaReport.ReportHeader.SerialNumber, startTime))
                     {
@@ -189,7 +219,8 @@ namespace SpeaReportParser
                 if (SpeaFileReports.Length == 0) continue;
 
                 for (Int32 i = 0; i < SpeaFileReports.Length; i++)
-                {                    
+                {
+                    if ((SpeaFileReports[i].ReportHeader.SerialNumber == "0000000000000") && (SpeaReportsToProcess.Length == 0)) continue;
                     if ((SpeaFileReports[i].ReportHeader.Grade == "PASS") && (SpeaFileReports[i].ReportHeader.SerialNumber != "0000000000000"))
                     {
                         Array.Resize(ref SpeaReportsToProcess, SpeaReportsToProcess.Length + 1);
@@ -200,6 +231,7 @@ namespace SpeaReportParser
                     {
                         if (SpeaFileReports[i+1].ReportHeader.SerialNumber == "0000000000000")
                         {
+
                             if (SpeaFileReports[i + 1].ReportHeader.Grade == "PASS")
                             {
                                 SpeaFileReports[i].ReportHeader.Grade = "PASS";
@@ -251,26 +283,36 @@ namespace SpeaReportParser
                     UR.mode = "P";
 
                     UR.TestNumberPrefix = false;
-
-                    /*
+                    
                     Array actReport = UR.GetXMLReport();
                     String str_actReport = "";
                     foreach (String actLine in actReport)
                     {
                         str_actReport = String.Concat(str_actReport, actLine);
                     }
-                    
-                    if (this.BelMesObj.BelMESAuthorization(UR.Cathegory.Product.SerialNo, "ICT", UR.Cathegory.Product.PartNo, ""))
-                    {
-                        Thread.Sleep(500);
 
-                        if (this.BelMesObj.SetActualResult(UR.Cathegory.Product.SerialNo, "ICT", UR.TestRun.grade, str_actReport))
-                        {
-                            DoubleResultCheck.WriteResult(UR.Cathegory.Product.SerialNo, UR.starttime);
-                        }
+                    DoubleResultCheck.WriteResult(UR.Cathegory.Product.SerialNo, UR.starttime);
+
+                    if (!this.BelMesObj.EmployeeVerification(UR.Operator.ToString()))
+                    {
+                        ErrorHandling.Create("Neznamy operator.", false, false);
                     }
-                    */
+                    else
+                    {
+                        if (this.BelMesObj.BelMESAuthorization(UR.Cathegory.Product.SerialNo, "ICT", UR.Cathegory.Product.PartNo, ""))
+                        {
+                            Thread.Sleep(500);
+
+                            if (this.BelMesObj.SetActualResult(UR.Cathegory.Product.SerialNo, "ICT", UR.TestRun.grade, str_actReport))
+                            {
+                                //DoubleResultCheck.WriteResult(UR.Cathegory.Product.SerialNo, UR.starttime);
+                            }
+                        }
+                    }   
+                    
                 }
+
+                this.TrayIcon.Text = str_actualTrayIconText;
             }
         }
 

@@ -124,9 +124,23 @@ namespace SpeaReportParser
                 ErrorHandling.Create("Value convert error", false, false);
                 return 0;
             }
-            Int32 Evalue = Convert.ToInt32(inputString.Substring(ePos + 2));
 
-            retVal = Convert.ToDouble(inputString.Substring(0, ePos));
+            Int32 Evalue = 0;
+
+            try
+            {
+                Evalue = Convert.ToInt32(inputString.Substring(ePos + 2));
+                retVal = Convert.ToDouble(inputString.Substring(0, ePos));
+            }
+            catch
+            {
+                if (inputString.IndexOf("NAN") > -1)
+                {
+                    Evalue = 99;
+                    retVal = 1;
+                }
+            }
+            
 
             if (isEPositive)
             {

@@ -5,7 +5,7 @@ namespace SpeaReportParser
 {
     class DoubleResultCheck
     {
-        const String ResultLogFile = "ResultLog.txt";
+        const String ResultLogFile = @"C:/Users/Public/Documents/SpeaProcesedResultsDoNotDelete.txt";
 
         public static void WriteResult(String SerialNumber, DateTime StartTime)
         {

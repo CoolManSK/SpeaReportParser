@@ -19,6 +19,7 @@ namespace SpeaReportParser
             else
             {
                 ErrorHandling.Create("Station config file not found. Please, call test engineer.", true, true);
+                //ErrorHandling.Create()
                 return "";
             }
 
